@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChemChain UNO - Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes reaction-glow {
+            0% { box-shadow: 0 0 10px #facc15; }
+            50% { box-shadow: 0 0 40px #facc15; transform: scale(1.05); }
+            100% { box-shadow: 0 0 10px #facc15; }
+        }
+        .reaction-active { animation: reaction-glow 1s infinite; }
+        .card-hover:hover { transform: translateY(-15px); transition: 0.3s; }
+    </style>
+</head>
+<body class="bg-[#0a0a14] text-white font-sans min-h-screen flex flex-col items-center justify-between py-10">
+
+    <div class="w-full max-w-4xl px-6 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full border-2 border-cyan-400 bg-slate-800 flex items-center justify-center">🧪</div>
+            <div>
+                <h1 class="text-xl font-black tracking-tighter">ChemChain <span class="text-cyan-400">UNO</span></h1>
+                <p class="text-xs text-slate-500 uppercase">Rank: Junior Chemist</p>
+            </div>
+        </div>
+        <div class="bg-white/5 border border-white/10 p-3 rounded-xl">
+            <div class="text-[10px] text-slate-400 uppercase mb-1">Energy Stability</div>
+            <div class="w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div id="energy-bar" class="w-full h-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <div id="feedback" class="mb-6 text-xl font-medium text-slate-400">Match the center card!</div>
+        
+        <div id="center-card" class="w-44 h-60 rounded-2xl border-4 border-white/20 bg-green-600 flex flex-col items-center justify-center shadow-2xl transition-all duration-500">
+            <span id="center-symbol" class="text-7xl font-black italic">Cl</span>
+            <span id="center-name" class="text-sm mt-2 uppercase tracking-widest font-bold">Chlorine</span>
+            <div class="absolute bottom-4 text-[10px] opacity-50 uppercase">Halogen</div>
+        </div>
+    </div>
+
+    <div class="flex gap-4 px-6 overflow-x-auto w-full justify-center pb-8" id="player-hand">
+        </div>
+
+    <script>
+        const ELEMENTS = [
+            { symbol: 'Na', name: 'Sodium', group: 'Alkali', color: 'bg-orange-500', type: 'Metal' },
+            { symbol: 'Cl', name: 'Chlorine', group: 'Halogen', color: 'bg-green-600', type: 'Non-Metal' },
+            { symbol: 'K', name: 'Potassium', group: 'Alkali', color: 'bg-orange-600', type: 'Metal' },
+            { symbol: 'Ar', name: 'Argon', group: 'Noble', color: 'bg-purple-600', type: 'Inert' },
+            { symbol: 'F', name: 'Fluorine', group: 'Halogen', color: 'bg-green-400', type: 'Non-Metal' }
+        ];
+
+        let activeCard = ELEMENTS[1]; // Start with Chlorine
+        let hand = [ELEMENTS[0], ELEMENTS[2], ELEMENTS[3], ELEMENTS[4]];
+
+        function renderHand() {
+            const handDiv = document.getElementById('player-hand');
+            handDiv.innerHTML = '';
+            hand.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = `${card.color} w-32 h-44 rounded-xl border-2 border-white/20 flex flex-col items-center justify-center cursor-pointer card-hover shadow-lg flex-shrink-0`;
+                cardEl.innerHTML = `<span class="text-4xl font-black italic">${card.symbol}</span><span class="text-[10px] mt-1 uppercase opacity-80">${card.name}</span>`;
+                cardEl.onclick = () => playCard(index);
+                handDiv.appendChild(cardEl);
+            });
+        }
+
+        function playCard(index) {
+            const played = hand[index];
+            const feedback = document.getElementById('feedback');
+            const centerCardDiv = document.getElementById('center-card');
+
+            // Logic: Reaction (Metal + Non-Metal) OR Family Match (Same Color/Group)
+            const isReaction = (played.type !== activeCard.type && played.type !== 'Inert' && activeCard.type !== 'Inert');
+            const isFamily = played.group === activeCard.group;
+            const isInert = played.type === 'Inert';
+
+            if (isReaction || isFamily || isInert) {
+                activeCard = played;
+                hand.splice(index, 1);
+                
+                // Update UI
+                document.getElementById('center-symbol').innerText = played.symbol;
+                document.getElementById('center-name').innerText = played.name;
+                centerCardDiv.className = `w-44 h-60 rounded-2xl border-4 border-white/20 flex flex-col items-center justify-center shadow-2xl transition-all duration-500 relative ${played.color}`;
+                
+                if (isReaction) {
+                    feedback.innerText = "🔥 POWER MOVE! Reaction Triggered!";
+                    feedback.className = "mb-6 text-xl font-black text-yellow-400 scale-110 transition-all";
+                    centerCardDiv.classList.add('reaction-active');
+                    setTimeout(() => centerCardDiv.classList.remove('reaction-active'), 1000);
+                } else {
+                    feedback.innerText = "Family Link established.";
+                    feedback.className = "mb-6 text-xl font-medium text-cyan-400";
+                }
+                
+                renderHand();
+                if(hand.length === 0) feedback.innerText = "🏆 YOU WIN! REACTION MASTER!";
+            } else {
+                feedback.innerText = "❌ No Reaction Possible! Draw.";
+                feedback.className = "mb-6 text-xl font-medium text-red-500";
+            }
+        }
+
+        renderHand();
+    </script>
+</body>
+</html>
