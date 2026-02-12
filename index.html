@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChemChain UNO | Official Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        /* Top High-Vis Disclaimer */
+        .banner {
+            background: #facc15;
+            color: #000;
+            font-size: 10px;
+            font-weight: 900;
+            text-align: center;
+            padding: 4px;
+            letter-spacing: 1px;
+        }
+        /* Card Styles */
+        .card {
+            flex: 0 0 110px;
+            height: 150px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            border: 2px solid rgba(255,255,255,0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            position: relative;
+        }
+        .card:hover { transform: translateY(-10px); border-color: white; }
+        
+        /* Neon Colors */
+        .alkali { background: linear-gradient(135deg, #ef4444, #f97316); box-shadow: 0 0 20px #ef444466; }
+        .halogen { background: linear-gradient(135deg, #06b6d4, #3b82f6); box-shadow: 0 0 20px #06b6d466; }
+        .noble { background: linear-gradient(135deg, #a855f7, #6366f1); box-shadow: 0 0 20px #a855f766; }
+        .alkaline { background: linear-gradient(135deg, #22c55e, #10b981); box-shadow: 0 0 20px #22c55e66; }
+
+        /* Scrollbar Hide */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 20px currentColor; }
+            50% { box-shadow: 0 0 50px currentColor; transform: scale(1.05); }
+            100% { box-shadow: 0 0 20px currentColor; }
+        }
+        .reacting { animation: pulse 0.6s infinite; }
+    </style>
+</head>
+<body>
+
+    <div class="banner">⚠️ PROTOTYPE BUILD: THE STABLE VERSION WILL FEATURE 118 ELEMENTS & WEB3 MULTIPLAYER</div>
+
+    <header class="p-6 flex justify-between items-center bg-black/20 backdrop-blur-md border-b border-white/10">
+        <div>
+            <h1 class="text-2xl font-black italic tracking-tighter">
+                CHEMCHAIN <span class="text-cyan-400">UNO</span>
+            </h1>
+            <p class="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Molecular Strategy Engine</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="hidden md:block text-right">
+                <p class="text-[8px] text-slate-500 uppercase">Energy Meter</p>
+                <div class="w-24 h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                    <div class="w-3/4 h-full bg-cyan-500 shadow-[0_0_10px_cyan]"></div>
+                </div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-xl">🧪</div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center space-y-8 relative">
+        <div id="status" class="text-slate-400 text-xs font-bold uppercase tracking-widest">Reaction Zone Active</div>
+
+        <div id="center-card" class="card halogen w-40 h-56 scale-125 mb-8">
+            <span class="absolute top-2 left-3 text-[10px] text-black/30 font-black">17</span>
+            <span id="center-symbol" class="text-6xl italic drop-shadow-lg">Cl</span>
+            <span id="center-name" class="text-[10px] opacity-70 mt-2 font-bold tracking-widest uppercase">Chlorine</span>
+        </div>
+
+        <div id="feedback" class="text-cyan-400 font-black text-sm h-6 uppercase tracking-widest">Play a card to bond!</div>
+    </main>
+
+    <footer class="bg-slate-900/80 border-t border-white/10 p-4">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex justify-between items-center mb-4 px-2">
+                <button onclick="drawCard()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-black px-6 py-2 rounded-full uppercase transition-all active:scale-95 shadow-[0_0_15px_rgba(8,145,178,0.4)]">
+                    Draw +
+                </button>
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Your Lab Hand</span>
+            </div>
+
+            <div id="hand" class="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                </div>
+        </div>
+    </footer>
+
+    <script>
+        const DECK = [
+            { s: 'Na', n: 'Sodium', g: 'Alkali', c: 'alkali', t: 'Metal' },
+            { s: 'Cl', n: 'Chlorine', g: 'Halogen', c: 'halogen', t: 'Non-Metal' },
+            { s: 'K', n: 'Potassium', g: 'Alkali', c: 'alkali', t: 'Metal' },
+            { s: 'Ar', n: 'Argon', g: 'Noble', c: 'noble', t: 'Inert' },
+            { s: 'Mg', n: 'Magnesium', g: 'Alkaline', c: 'alkaline', t: 'Metal' }
+        ];
+
+        let activeCard = DECK[1];
+        let hand = [DECK[0], DECK[2], DECK[3], DECK[4]];
+
+        function updateHand() {
+            const handDiv = document.getElementById('hand');
+            handDiv.innerHTML = '';
+            hand.forEach((card, idx) => {
+                const el = document.createElement('div');
+                el.className = `card ${card.c}`;
+                el.innerHTML = `
+                    <span class="text-4xl italic">${card.s}</span>
+                    <span class="text-[8px] opacity-80 mt-1 uppercase font-bold">${card.n}</span>
+                `;
+                el.onclick = () => play(idx);
+                handDiv.appendChild(el);
+            });
+        }
+
+        function play(idx) {
+            const played = hand[idx];
+            const feedback = document.getElementById('feedback');
+            const center = document.getElementById('center-card');
+
+            // Reaction Logic
+            const isReaction = (played.t !== activeCard.t && played.t !== 'Inert' && activeCard.t !== 'Inert');
+            const isFamily = played.g === activeCard.g;
+
+            if (isReaction || isFamily || played.t === 'Inert') {
+                activeCard = played;
+                hand.splice(idx, 1);
+                
+                // Update Center Card
+                document.getElementById('center-symbol').innerText = played.s;
+                document.getElementById('center-name').innerText = played.n;
+                center.className = `card ${played.c} reacting w-40 h-56 scale-125 mb-8`;
+                
+                feedback.innerText = isReaction ? "🔥 BOND TRIGGERED!" : "FAMILY LINK!";
+                feedback.className = "text-yellow-400 font-black text-sm h-6 uppercase tracking-widest";
+                
+                setTimeout(() => {
+                    center.classList.remove('reacting');
+                }, 600);
+                
+                updateHand();
+            } else {
+                feedback.innerText = "❌ Elements won't bond!";
+                feedback.className = "text-red-500 font-black text-sm h-6 uppercase tracking-widest";
+            }
+        }
+
+        function drawCard() {
+            hand.push(DECK[Math.floor(Math.random() * DECK.length)]);
+            updateHand();
+            const container = document.getElementById('hand');
+            container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+        }
+
+        updateHand();
+    </script>
+</body>
+</html>
