@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChemChain UNO | Universal Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin: 0;
+        }
+        /* Top High-Vis Disclaimer */
+        .proto-banner {
+            background: #facc15;
+            color: #000;
+            font-size: 11px;
+            font-weight: 900;
+            text-align: center;
+            padding: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid rgba(0,0,0,0.1);
+        }
+        /* Card Styles */
+        .card {
+            flex: 0 0 100px;
+            height: 140px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            border: 2px solid rgba(255,255,255,0.2);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        /* Desktop specific hover */
+        @media (min-width: 768px) {
+            .card { flex: 0 0 120px; height: 160px; }
+            .card:hover { transform: translateY(-10px); border-color: white; }
+        }
+
+        /* Neon Group Colors */
+        .alkali { background: linear-gradient(135deg, #ef4444, #f97316); box-shadow: 0 0 15px #ef444466; }
+        .alkaline { background: linear-gradient(135deg, #eab308, #f97316); box-shadow: 0 0 15px #eab30866; }
+        .transition-metal { background: linear-gradient(135deg, #64748b, #334155); }
+        .post-transition { background: linear-gradient(135deg, #10b981, #059669); }
+        .metalloid { background: linear-gradient(135deg, #84cc16, #4d7c0f); }
+        .non-metal { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+        .halogen { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .noble { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+        .lanthanide { background: linear-gradient(135deg, #f472b6, #db2777); }
+        .actinide { background: linear-gradient(135deg, #4c0519, #881337); }
+
+        .hand-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 10px 20px 25px 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="proto-banner">
+        ⚠️ This is just a prototype. The real version will be more stable with full multiplayer logic.
+    </div>
+
+    <header class="p-4 flex justify-between items-center bg-black/30 border-b border-white/10">
+        <div>
+            <h1 class="text-xl md:text-2xl font-black italic tracking-tighter">
+                CHEMCHAIN <span class="text-cyan-400 font-bold">UNO</span>
+            </h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-1 rounded">118 ELMS</span>
+            <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-sm border border-white/10">🧪</div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center relative p-4">
+        <div id="status" class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-4 md:mb-8">Reaction Zone</div>
+
+        <div id="center-card" class="card halogen w-32 h-48 md:w-40 md:h-56 scale-110 mb-6 transition-all duration-300">
+            <span id="center-symbol" class="text-5xl md:text-6xl italic">Cl</span>
+            <span id="center-name" class="text-[9px] md:text-[10px] opacity-80 mt-2 font-bold uppercase">Chlorine</span>
+        </div>
+
+        <div id="feedback" class="text-cyan-400 font-bold text-xs uppercase tracking-widest h-4">Awaiting Reactant...</div>
+    </main>
+
+    <footer class="bg-slate-900/95 border-t border-white/10 pt-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center px-6 mb-2">
+                <button onclick="drawCard()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-black px-5 py-2 rounded-full uppercase transition-all shadow-lg active:scale-95">
+                    Draw +
+                </button>
+                <span id="hand-count" class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Hand: 4 Cards</span>
+            </div>
+
+            <div id="hand" class="hand-scroll no-scrollbar">
+                </div>
+        </div>
+    </footer>
+
+    <script>
+        const PERIODIC_TABLE = [
+            { s: 'H', n: 'Hydrogen', g: 'Non-metal', c: 'non-metal', t: 'Gas' },
+            { s: 'He', n: 'Helium', g: 'Noble', c: 'noble', t: 'Inert' },
+            { s: 'Li', n: 'Lithium', g: 'Alkali', c: 'alkali', t: 'Metal' },
+            { s: 'Be', n: 'Beryllium', g: 'Alkaline', c: 'alkaline', t: 'Metal' },
+            { s: 'B', n: 'Boron', g: 'Metalloid', c: 'metalloid', t: 'Metalloid' },
+            { s: 'C', n: 'Carbon', g: 'Non-metal', c: 'non-metal', t: 'Non-metal' },
+            { s: 'N', n: 'Nitrogen', g: 'Non-metal', c: 'non-metal', t: 'Gas' },
+            { s: 'O', n: 'Oxygen', g: 'Non-metal', c: 'non-metal', t: 'Gas' },
+            { s: 'F', n: 'Fluorine', g: 'Halogen', c: 'halogen', t: 'Non-metal' },
+            { s: 'Ne', n: 'Neon', g: 'Noble', c: 'noble', t: 'Inert' },
+            { s: 'Na', n: 'Sodium', g: 'Alkali', c: 'alkali', t: 'Metal' },
+            { s: 'Mg', n: 'Magnesium', g: 'Alkaline', c: 'alkaline', t: 'Metal' },
+            { s: 'Al', n: 'Aluminum', g: 'Post-transition', c: 'post-transition', t: 'Metal' },
+            { s: 'Si', n: 'Silicon', g: 'Metalloid', c: 'metalloid', t: 'Metalloid' },
+            { s: 'P', n: 'Phosphorus', g: 'Non-metal', c: 'non-metal', t: 'Non-metal' },
+            { s: 'S', n: 'Sulfur', g: 'Non-metal', c: 'non-metal', t: 'Non-metal' },
+            { s: 'Cl', n: 'Chlorine', g: 'Halogen', c: 'halogen', t: 'Non-metal' },
+            { s: 'Ar', n: 'Argon', g: 'Noble', c: 'noble', t: 'Inert' },
+            { s: 'K', n: 'Potassium', g: 'Alkali', c: 'alkali', t: 'Metal' },
+            { s: 'Ca', n: 'Calcium', g: 'Alkaline', c: 'alkaline', t: 'Metal' },
+            { s: 'Sc', n: 'Scandium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Ti', n: 'Titanium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'V', n: 'Vanadium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Cr', n: 'Chromium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Mn', n: 'Manganese', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Fe', n: 'Iron', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Co', n: 'Cobalt', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Ni', n: 'Nickel', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Cu', n: 'Copper', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Zn', n: 'Zinc', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Ga', n: 'Gallium', g: 'Post-transition', c: 'post-transition', t: 'Metal' },
+            { s: 'Ge', n: 'Germanium', g: 'Metalloid', c: 'metalloid', t: 'Metalloid' },
+            { s: 'As', n: 'Arsenic', g: 'Metalloid', c: 'metalloid', t: 'Metalloid' },
+            { s: 'Se', n: 'Selenium', g: 'Non-metal', c: 'non-metal', t: 'Non-metal' },
+            { s: 'Br', n: 'Bromine', g: 'Halogen', c: 'halogen', t: 'Non-metal' },
+            { s: 'Kr', n: 'Krypton', g: 'Noble', c: 'noble', t: 'Inert' },
+            { s: 'Rb', n: 'Rubidium', g: 'Alkali', c: 'alkali', t: 'Metal' },
+            { s: 'Sr', n: 'Strontium', g: 'Alkaline', c: 'alkaline', t: 'Metal' },
+            { s: 'Y', n: 'Yttrium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Zr', n: 'Zirconium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Nb', n: 'Niobium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Mo', n: 'Molybdenum', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Tc', n: 'Technetium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Ru', n: 'Ruthenium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Rh', n: 'Rhodium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Pd', n: 'Palladium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Ag', n: 'Silver', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Cd', n: 'Cadmium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'In', n: 'Indium', g: 'Post-transition', c: 'post-transition', t: 'Metal' },
+            { s: 'Sn', n: 'Tin', g: 'Post-transition', c: 'post-transition', t: 'Metal' },
+            { s: 'Sb', n: 'Antimony', g: 'Metalloid', c: 'metalloid', t: 'Metalloid' },
+            { s: 'Te', n: 'Tellurium', g: 'Metalloid', c: 'metalloid', t: 'Metalloid' },
+            { s: 'I', n: 'Iodine', g: 'Halogen', c: 'halogen', t: 'Non-metal' },
+            { s: 'Xe', n: 'Xenon', g: 'Noble', c: 'noble', t: 'Inert' },
+            { s: 'Cs', n: 'Cesium', g: 'Alkali', c: 'alkali', t: 'Metal' },
+            { s: 'Ba', n: 'Barium', g: 'Alkaline', c: 'alkaline', t: 'Metal' },
+            { s: 'La', n: 'Lanthanum', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Ce', n: 'Cerium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Pr', n: 'Praseodymium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Nd', n: 'Neodymium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Pm', n: 'Promethium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Sm', n: 'Samarium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Eu', n: 'Europium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Gd', n: 'Gadolinium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Tb', n: 'Terbium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Dy', n: 'Dysprosium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Ho', n: 'Holmium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Er', n: 'Erbium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Tm', n: 'Thulium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Yb', n: 'Ytterbium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Lu', n: 'Lutetium', g: 'Lanthanide', c: 'lanthanide', t: 'Metal' },
+            { s: 'Hf', n: 'Hafnium', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s: 'Ta', n: 'Tantalum', g: 'Transition-metal', c: 'transition-metal', t: 'Metal' },
+            { s:
