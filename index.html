@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChemChain UNO | Universal Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #111827 0%, #020617 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        /* Prototype Branding Bar */
+        .proto-alert {
+            background: #facc15;
+            color: #000;
+            font-size: 10px;
+            font-weight: 900;
+            text-align: center;
+            padding: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 100;
+        }
+        /* Universal Responsive Cards */
+        .card {
+            flex: 0 0 95px; /* Smaller for mobile */
+            height: 135px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        /* Laptop/Desktop Scaling */
+        @media (min-width: 768px) {
+            .card { flex: 0 0 125px; height: 175px; border-radius: 16px; }
+            .card:hover { transform: translateY(-10px); border-color: rgba(255,255,255,0.5); z-index: 10; }
+        }
+
+        /* Neon Group Colors */
+        .alkali { background: linear-gradient(135deg, #ef4444, #f97316); box-shadow: 0 0 15px #ef444466; }
+        .alkaline { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 0 15px #f59e0b66; }
+        .transition { background: linear-gradient(135deg, #64748b, #334155); }
+        .post-transition { background: linear-gradient(135deg, #10b981, #059669); }
+        .metalloid { background: linear-gradient(135deg, #84cc16, #4d7c0f); }
+        .non-metal { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+        .halogen { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .noble { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+        .lanthanide { background: linear-gradient(135deg, #f472b6, #db2777); }
+        .actinide { background: linear-gradient(135deg, #9f1239, #4c0519); }
+
+        .hand-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 10px 20px 30px 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="proto-alert">
+        ⚠️ This is just a prototype. The final version will be more stable with full multiplayer logic.
+    </div>
+
+    <header class="p-4 flex justify-between items-center bg-black/40 border-b border-white/5">
+        <div>
+            <h1 class="text-xl md:text-2xl font-black italic tracking-tighter">
+                CHEMCHAIN <span class="text-cyan-400">UNO</span>
+            </h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-[9px] font-bold text-slate-400 bg-white/5 px-2 py-1 rounded border border-white/10 uppercase">118 Elements Loaded</span>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center relative p-4">
+        <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] mb-4 md:mb-8">Reaction Zone</p>
+
+        <div id="center-card" class="card halogen w-32 h-48 md:w-44 md:h-60 scale-110 mb-6 transition-all duration-500">
+            <span id="center-symbol" class="text-5xl md:text-7xl italic drop-shadow-lg">Cl</span>
+            <span id="center-name" class="text-[9px] md:text-[10px] opacity-70 mt-2 font-black tracking-widest uppercase">Chlorine</span>
+        </div>
+
+        <div id="feedback" class="text-cyan-400 font-bold text-xs uppercase tracking-widest h-4 animate-pulse">Awaiting Chemical Bond...</div>
+    </main>
+
+    <footer class="bg-slate-900/90 border-t border-white/10 pt-4 pb-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center px-6 mb-3">
+                <button onclick="drawCard()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-black px-5 py-2 rounded-full uppercase transition-all shadow-lg active:scale-95">
+                    Draw +
+                </button>
+                <span id="hand-count" class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Hand: 4 Cards</span>
+            </div>
+
+            <div id="hand" class="hand-scroll no-scrollbar">
+                </div>
+        </div>
+    </footer>
+
+    <script>
+        // Full 118 Element Database
+        const DECK_DATA = [
+            ["H","Hydrogen","non-metal"],["He","Helium","noble"],["Li","Lithium","alkali"],["Be","Beryllium","alkaline"],
+            ["B","Boron","metalloid"],["C","Carbon","non-metal"],["N","Nitrogen","non-metal"],["O","Oxygen","non-metal"],
+            ["F","Fluorine","halogen"],["Ne","Neon","noble"],["Na","Sodium","alkali"],["Mg","Magnesium","alkaline"],
+            ["Al","Aluminum","post-transition"],["Si","Silicon","metalloid"],["P","Phosphorus","
