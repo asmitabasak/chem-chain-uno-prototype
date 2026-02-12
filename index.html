@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChemChain UNO | Stable Build</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; margin: 0;
+        }
+        .proto-alert {
+            background: #facc15; color: #000; font-size: 10px; font-weight: 900;
+            text-align: center; padding: 10px; text-transform: uppercase; z-index: 100;
+        }
+        .card {
+            flex: 0 0 100px; height: 140px; border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-weight: 900; border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.2s ease; cursor: pointer; user-select: none;
+        }
+        @media (min-width: 768px) {
+            .card { flex: 0 0 130px; height: 180px; }
+            .card:hover { transform: translateY(-10px); border-color: white; }
+        }
+        /* Group Colors */
+        .alkali { background: linear-gradient(135deg, #ef4444, #f97316); }
+        .alkaline { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .transition { background: linear-gradient(135deg, #64748b, #334155); }
+        .post-transition { background: linear-gradient(135deg, #10b981, #059669); }
+        .metalloid { background: linear-gradient(135deg, #84cc16, #4d7c0f); }
+        .non-metal { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+        .halogen { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .noble { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+        .rare-earth { background: linear-gradient(135deg, #f472b6, #9f1239); }
+
+        .hand-scroll {
+            display: flex; gap: 15px; overflow-x: auto;
+            padding: 15px 25px 35px 25px; -webkit-overflow-scrolling: touch;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        button:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <div class="proto-alert">
+        ⚠️ Prototype: Final version will include stable multiplayer and anti-lag engine.
+    </div>
+
+    <header class="p-4 flex justify-between items-center bg-black/40 border-b border-white/5">
+        <h1 class="text-xl font-black italic">CHEMCHAIN <span class="text-cyan-400">UNO</span></h1>
+        <div class="text-[9px] font-bold text-slate-400 bg-white/5 px-2 py-1 rounded">118 ELEMENTS</div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center p-4">
+        <div id="center-card" class="card halogen w-36 h-52 md:w-48 md:h-64 scale-110 mb-8 shadow-2xl transition-all duration-500">
+            <span id="center-symbol" class="text-6xl italic">Cl</span>
+            <span id="center-name" class="text-[10px] opacity-70 mt-2 font-bold uppercase tracking-widest">Chlorine</span>
+        </div>
+        <div id="feedback" class="text-cyan-400 font-bold text-xs uppercase tracking-widest h-4 text-center">Ready to React</div>
+    </main>
+
+    <footer class="bg-slate-900/95 border-t border-white/10 pt-4 pb-4">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex justify-between items-center mb-3">
+                <button onclick="drawCard()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black px-6 py-2 rounded-full uppercase shadow-lg">
+                    Draw Card +
+                </button>
+                <span id="hand-label" class="text-[10px] font-black text-slate-500 uppercase">Hand: 4</span>
+            </div>
+            <div id="hand" class="hand-scroll no-scrollbar"></div>
+        </div>
+    </footer>
+
+    <script>
+        const DECK = [
+            {s:'H',n:'Hydrogen',g:'non-metal'},{s:'He',n:'Helium',g:'noble'},{s:'Li',n:'Lithium',g:'alkali'},{s:'Be',n:'Beryllium',g:'alkaline'},
+            {s:'B',n:'Boron',g:'metalloid'},{s:'C',n:'Carbon',g:'non-metal'},{s:'N',n:'Nitrogen',g:'non-metal'},{s:'O',n:'Oxygen',g:'non-metal'},
+            {s:'F',n:'Fluorine',g:'halogen'},{s:'Ne',n:'Neon',g:'noble'},{s:'Na',n:'Sodium',g:'alkali'},{s:'Mg',n:'Magnesium',g:'alkaline'},
+            {s:'Al',n:'Aluminum',g:'post-transition'},{s:'Si',n:'Silicon',g:'metalloid'},{s:'P',n:'Phosphorus',g:'non-metal'},{s:'S',n:'Sulfur',g:'non-metal'},
+            {s:'Cl',n:'Chlorine',g:'halogen'},{s:'Ar',n:'Argon',g:'noble'},{s:'K',n:'Potassium',g:'alkali'},{s:'Ca',n:'Calcium',g:'alkaline'},
+            {s:'Sc',n:'Scandium',g:'transition'},{s:'Ti',n:'Titanium',g:'transition'},{s:'V',n:'Vanadium',g:'transition'},{s:'Cr',n:'Chromium',g:'transition'},
+            {s:'Mn',n:'Manganese',g:'transition'},{s:'Fe',n:'Iron',g:'transition'},{s:'Co',n:'Cobalt',g:'transition'},{s:'Ni',n:'Nickel',g:'transition'},
+            {s:'Cu',n:'Copper',g:'transition'},{s:'Zn',n:'Zinc',g:'transition'},{s:'Ga',n:'Gallium',g:'post-transition'},{s:'Ge',n:'Germanium',g:'metalloid'},
+            {s:'As',n:'Arsenic',g:'metalloid'},{s:'Se',n:'Selenium',g:'non-metal'},{s:'Br',n:'Bromine',g:'halogen'},{s:'Kr',n:'Krypton',g:'noble'},
+            {s:'Rb',n:'Rubidium',g:'alkali'},{s:'Sr',n:'Strontium',g:'alkaline'},{s:'Y',n:'Yttrium',g:'transition'},{s:'Zr',n:'Zirconium',g:'transition'},
+            {s:'Nb',n:'Niobium',g:'transition'},{s:'Mo',n:'Molybdenum',g:'transition'},{s:'Tc',n:'Technetium',g:'transition'},{s:'Ru',n:'Ruthenium',g:'transition'},
+            {s:'Rh',n:'Rhodium',g:'transition'},{s:'Pd',n:'Palladium',g:'transition'},{s:'Ag',n:'Silver',g:'transition'},{s:'Cd',n:'Cadmium',g:'transition'},
+            {s:'In',n:'Indium',g:'post-transition'},{s:'Sn',n:'Tin',g:'post-transition'},{s:'Sb',n:'Antimony',g:'metalloid'},{s:'Te',n:'Tellurium',g:'metalloid'},
+            {s:'I',n:'Iodine',g:'halogen'},{s:'Xe',n:'Xenon',g:'noble'},{s:'Cs',n:'Cesium',g:'alkali'},{s:'Ba',n:'Barium',g:'alkaline'},
+            {s:'La',n:'Lanthanum',g:'rare-earth'},{s:'Ce',n:'Cerium',g:'rare-earth'},{s:'Pr',n:'Praseodymium',g:'rare-earth'},{s:'Nd',n:'Neodymium',g:'rare-earth'},
+            {s:'Pm',n:'Promethium',g:'rare-earth'},{s:'Sm',n:'Samarium',g:'rare-earth'},{s:'Eu',n:'Europium',g:'rare-earth'},{s:'Gd',n:'Gadolinium',g:'rare-earth'},
+            {s:'Tb',n:'Terbium',g:'rare-earth'},{s:'Dy',n:'Dysprosium',g:'rare-earth'},{s:'Ho',n:'Holmium',g:'rare-earth'},{s:'Er',n:'Erbium',g:'rare-earth'},
+            {s:'Tm',n:'Thulium',g:'rare-earth'},{s:'Yb',n:'Ytterbium',g:'rare-earth'},{s:'Lu',n:'Lutetium',g:'rare-earth'},{s:'Hf',n:'Hafnium',g:'transition'},
+            {s:'Ta',n:'Tantalum',g:'transition'},{s:'W',n:'Tungsten',g:'transition'},{s:'Re',n:'Rhenium',g:'transition'},{s:'Os',n:'Osmium',g:'transition'},
+            {s:'Ir',n:'Iridium',g:'transition'},{s:'Pt',n:'Platinum',g:'transition'},{s:'Au',n:'Gold',g:'transition'},{s:'Hg',n:'Mercury',g:'post-transition'},
+            {s:'Tl',n:'Thallium',g:'post-transition'},{s:'Pb',n:'Lead',g:'post-transition'},{s:'Bi',n:'Bismuth',g:'post-transition'},{s:'Po',n:'Polonium',g:'post-transition'},
+            {s:'At',n:'Astatine',g:'metalloid'},{s:'Rn',n:'Radon',g:'noble'},{s:'Fr',n:'Francium',g:'alkali'},{s:'Ra',n:'Radium',g:'alkaline'},
+            {s:'Ac',n:'Actinium',g:'rare-earth'},{s:'Th',n:'Thorium',g:'rare-earth'},{s:'Pa',n:'Protactinium',g:'rare-earth'},{s:'U',n:'Uranium',g:'rare-earth'},
+            {s:'Np',n:'Neptunium',g:'rare-earth'},{s:'Pu',n:'Plutonium',g:'rare-earth'},{s:'Am',n:'Americium',g:'rare-earth'},{s:'Cm',n:'Curium',g:'rare-earth'},
+            {s:'Bk',n:'Berkelium',g:'rare-earth'},{s:'Cf',n:'Californium',g:'rare-earth'},{s:'Es',n:'Einsteinium',g:'rare-earth'},{s:'Fm',n:'Fermium',g:'rare-earth'},
+            {s:'Md',n:'Mendelevium',g:'rare-earth'},{s:'No',n:'Nobelium',g:'rare-earth'},{s:'Lr',n:'Lawrencium',g:'rare-earth'},{s:'Rf',n:'Rutherfordium',g:'transition'},
+            {s:'Db',n:'Dubnium',g:'transition'},{s:'Sg',n:'Seaborgium',g:'transition'},{s:'Bh',n:'Bohrium',g:'transition'},{s:'Hs',n:'Hassium',g:'transition'},
+            {s:'Mt',n:'Meitnerium',g:'transition'},{s:'Ds',n:'Darmstadtium',g:'transition'},{s:'Rg',n:'Roentgenium',g:'transition'},{s:'Cn',n:'Copernicium',g:'post-transition'},
+            {s:'Nh',n:'Nihonium',g:'post-transition'},{s:'Fl',n:'Flerovium',g:'post-transition'},{s:'Mc',n:'Moscovium',g:'post-transition'},{s:'Lv',n:'Livermorium',g:'post-transition'},
+            {s:'Ts',n:'Tennessine',g:'halogen'},{s:'Og',n:'Oganesson',g:'noble'}
+        ];
+
+        let currentActive = DECK[16]; // Chlorine
+        let playerHand = [DECK[10], DECK[0], DECK[7], DECK[17]]; // Na, H, O, Ar
+
+        function updateHandUI() {
+            const handEl = document.getElementById('hand');
+            if (!handEl) return;
+            handEl.innerHTML = '';
+            
+            playerHand.forEach((card, i) => {
+                const div = document.createElement('div');
+                div.className = `card ${card.g} flex-shrink-0`;
+                div.innerHTML = `<span class="text-3xl italic">${card.s}</span><span class="text-[8px] mt-1 font-black opacity-80 uppercase">${card.n}</span>`;
+                div.onclick = () => playCard(i);
+                handEl.appendChild(div);
+            });
+            
+            document.getElementById('hand-label').innerText = `Hand: ${playerHand.length}`;
+            const spacer = document.createElement('div');
+            spacer.className = "flex-shrink-0 w-12";
+            handEl.appendChild(spacer);
+        }
+
+        function playCard(index) {
+            const card = playerHand[index];
+            const isSameGroup = (card.g === currentActive.g);
+            const isNobleWild = (card.g === 'noble' || currentActive.g === 'noble');
+            const isIonic = (card.g === 'alkali' && currentActive.g === 'halogen') || (card.g === 'halogen' && currentActive.g === 'alkali');
+            const isWater = (card.s === 'H' && currentActive.s === 'O') || (card.s === 'O' && currentActive.s === 'H');
+
+            if (isSameGroup || isNobleWild || isIonic || isWater) {
+                currentActive = card;
+                playerHand.splice(index, 1);
+                
+                document.getElementById('center-symbol').innerText = card.s;
+                document.getElementById('center-name').innerText = card.n;
+                document.getElementById('center-card').className = `card ${card.g} w-36 h-52 md:w-48 md:h-64 scale-110 mb-8 transition-all duration-300 shadow-2xl`;
+                
+                if(isIonic) document.getElementById('feedback').innerText = "⚡ IONIC BOND: NaCl!";
+                else if(isWater) document.getElementById('feedback').innerText = "💧 COVALENT BOND: H2O!";
+                else document.getElementById('feedback').innerText = "✅ Reaction Successful!";
+                
+                updateHandUI();
+            } else {
+                document.getElementById('feedback').innerText = "❌ No Reaction Possible!";
+            }
+        }
+
+        function drawCard() {
+            // Safety: Select a truly random element from the 118 list
+            const randomElement = DECK[Math.floor(Math.random() * DECK.length)];
+            playerHand.push(randomElement);
+            
+            updateHandUI();
+            
+            // Auto-scroll to the new card
+            const container = document.getElementById('hand');
+            setTimeout(() => {
+                container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+            }, 50);
+        }
+
+        // Initialize hand on load
+        window.onload = updateHandUI;
+    </script>
+</body>
+</html>
